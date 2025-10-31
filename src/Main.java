@@ -1,12 +1,13 @@
 import javafx.application.Application;
+import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
+import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
 import java.io.FileInputStream;
@@ -16,21 +17,51 @@ public class Main extends Application {
     int cookiesClicked = 0;
     Color bgColor;
     Scene scene;
+    int multiplier = 1;
 
     @Override
     public void start(Stage primaryStage) throws Exception {
 
-        FileInputStream input = new FileInputStream("src/cookie_PNG13656.png");
-        Image image = new Image(input);
-        ImageView imageView = new ImageView(image);
-        imageView.setPreserveRatio(true);
-        imageView.setFitHeight(100);
+        FileInputStream chocoInput = new FileInputStream("src/cookie_PNG13656.png");
+        Image chocoImage = new Image(chocoInput);
+        ImageView chocolateChipImage = new ImageView(chocoImage);
+        chocolateChipImage.setPreserveRatio(true);
+        chocolateChipImage.setFitHeight(100);
 
+        FileInputStream redInput = new FileInputStream("src/redVelvet.png");
+        Image redImage = new Image(redInput);
+        ImageView redVelvetImage = new ImageView(redImage);
+        redVelvetImage.setPreserveRatio(true);
+        redVelvetImage.setFitHeight(100);
+
+        Text welcomeMsg = new Text("Welcome to Cookie Clicker!");
         Label cookieData = new Label("Cookies Clicked: " + cookiesClicked);
         cookieData.setFont(new Font("Ariel", 24));
-        Button cookieButton = new Button("", imageView);
+        Label multiplierData = new Label("Multiplier: " + multiplier + "x");
+        multiplierData.setFont(new Font("Ariel", 24));
+
+        ProgressBar progressBar = new ProgressBar(0);
+        Slider cookieSize = new Slider();
+
+        progressBar.setProgress(0);
+
+        Button cookieButton = new Button("", chocolateChipImage);
         cookieButton.setOnAction(actionEvent ->  {
-            cookiesClicked++;
+            cookiesClicked += multiplier;
+            if (cookiesClicked < 100) {
+                progressBar.setProgress((double) cookiesClicked /100);
+            }
+            else if (cookiesClicked > 100 && cookiesClicked < 500) {
+                multiplier = 2;
+                progressBar.setProgress((double) cookiesClicked /500);
+            } else if (cookiesClicked > 500 && cookiesClicked < 1500) {
+                multiplier = 5;
+                progressBar.setProgress((double) cookiesClicked /1500);
+            } else {
+                multiplier = 10;
+                progressBar.setProgress(1);
+            }
+            multiplierData.setText("Multiplier: " + multiplier + "x");
             cookieData.setText("Cookies Clicked: " + cookiesClicked);
         });
 
@@ -39,35 +70,70 @@ public class Main extends Application {
         Button resetButton = new Button("Reset Cookies");
         resetButton.setOnAction(actionEvent -> {
             cookiesClicked = 0;
+            multiplier = 0;
             cookieData.setText("Cookies Clicked: " + cookiesClicked);
         });
 
         ColorPicker bgColorPicker = new ColorPicker();
-        bgColor = bgColorPicker.getValue();
+        RadioButton chocolateChip = new RadioButton("Chocolate Chip Cookie");
+        chocolateChip.setSelected(true);
+        RadioButton redVelvet = new RadioButton("Red Velvet Cookie");
 
-        VBox settingPane = new VBox(resetButton, bgColorPicker);
+        chocolateChip.setOnAction(actionEvent -> {
+            if (chocolateChip.isSelected()) {
+                redVelvet.setSelected(false);
+                cookieButton.setGraphic(chocolateChipImage);
+            }
+        });
 
-        TitledPane pane1 = new TitledPane("Cookie Type" , new Label("Show all cookies available"));
-        TitledPane pane2 = new TitledPane("Clicker Finger"  , new Label("Show all pointer available"));
-        TitledPane pane3 = new TitledPane("Setting", settingPane);
+        redVelvet.setOnAction(actionEvent -> {
+            if (redVelvet.isSelected()) {
+                chocolateChip.setSelected(false);
+                cookieButton.setGraphic(redVelvetImage);
+            }
+        });
+
+        CheckBox autoclicker = new CheckBox("Auto Clicker");
+        autoclicker.setOnAction(actionEvent -> {
+            if (autoclicker.isSelected()) {
+                for (int i = 0; i < 100; i++) {
+                    cookieButton.fire();
+                    try {
+                        Thread.sleep(10);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+                autoclicker.setSelected(false);
+            }
+        });
+
+        Text goalMsg = new Text("Cookie Clicking Goal:");
+        TextField goalsetting = new TextField();
+        goalsetting.setPrefSize(500, 100);
+
+        VBox cookiePane = new VBox(chocolateChip, redVelvet);
+
+        VBox settingPane = new VBox(autoclicker, bgColorPicker, resetButton);
+
+        TitledPane pane1 = new TitledPane("Cookie Type" , cookiePane);
+        TitledPane pane2 = new TitledPane("Setting", settingPane);
 
         menu.getPanes().add(pane1);
         menu.getPanes().add(pane2);
-        menu.getPanes().add(pane3);
 
-        VBox vbox = new VBox(cookieData, cookieButton);
+        VBox vbox = new VBox(welcomeMsg, cookieData, cookieButton, multiplierData, progressBar, goalMsg, goalsetting);
         HBox hbox = new HBox(menu, vbox);
 
         bgColorPicker.setOnAction(actionEvent -> {
-            primaryStage.setTitle("Cookie Clicker");
-            scene = new Scene(hbox, 1000, 500, bgColor);
-            primaryStage.setScene(scene);
-
-            primaryStage.show();
+            bgColor = bgColorPicker.getValue();
+            BackgroundFill backgroundFill = new BackgroundFill(bgColor, CornerRadii.EMPTY, Insets.EMPTY);
+            Background background = new Background(backgroundFill);
+            hbox.setBackground(background);
         });
 
         primaryStage.setTitle("Cookie Clicker");
-        scene = new Scene(hbox, 1000, 500, bgColor);
+        scene = new Scene(hbox, 1000, 500);
         primaryStage.setScene(scene);
 
         primaryStage.show();
