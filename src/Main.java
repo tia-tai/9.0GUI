@@ -41,12 +41,12 @@ public class Main extends Application {
         multiplierData.setFont(new Font("Ariel", 24));
 
         ProgressBar progressBar = new ProgressBar(0);
-        Slider cookieSize = new Slider();
 
         progressBar.setProgress(0);
 
         Button cookieButton = new Button("", chocolateChipImage);
         cookieButton.setOnAction(actionEvent ->  {
+            // probability to gain more or lose cookies, spinner
             cookiesClicked += multiplier;
             if (cookiesClicked < 100) {
                 progressBar.setProgress((double) cookiesClicked /100);
@@ -93,26 +93,31 @@ public class Main extends Application {
             }
         });
 
+        Slider cookieSize = new Slider(0, 500, 100);
+        cookieSize.setOnScroll(scrollEvent -> {
+            chocolateChipImage.setFitHeight(cookieSize.getValue());
+            redVelvetImage.setFitHeight(cookieSize.getValue());
+        });
+
         CheckBox autoclicker = new CheckBox("Auto Clicker");
         autoclicker.setOnAction(actionEvent -> {
+            AutoClicker clicker = new AutoClicker(autoclicker, progressBar, cookieData, multiplierData, multiplier, cookiesClicked);
+            Thread autoclicking = new Thread(clicker);
             if (autoclicker.isSelected()) {
-                for (int i = 0; i < 100; i++) {
-                    cookieButton.fire();
-                    try {
-                        Thread.sleep(10);
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-                autoclicker.setSelected(false);
+                autoclicking.start();
+            }
+            else{
+                autoclicking.interrupt();
+                multiplier = clicker.multiplier;
+                cookiesClicked = clicker.cookiesClicked;
             }
         });
 
         Text goalMsg = new Text("Cookie Clicking Goal:");
-        TextField goalsetting = new TextField();
+        TextArea goalsetting = new TextArea();
         goalsetting.setPrefSize(500, 100);
 
-        VBox cookiePane = new VBox(chocolateChip, redVelvet);
+        VBox cookiePane = new VBox(chocolateChip, redVelvet, cookieSize);
 
         VBox settingPane = new VBox(autoclicker, bgColorPicker, resetButton);
 
